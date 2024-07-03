@@ -1,6 +1,12 @@
+import 'dart:math';
+
+import 'package:budget_tracker_app/db_helper.dart';
+import 'package:budget_tracker_app/home/budget_model.dart';
 import 'package:budget_tracker_app/home/home_controller.dart';
+import 'package:budget_tracker_app/home/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sqflite/sqflite.dart';
 
 class HomePage extends StatelessWidget {
   final HomeController _controller = Get.put(HomeController());
@@ -24,7 +30,7 @@ class HomePage extends StatelessWidget {
                 leading: CircleAvatar(
                   child: Icon(Icons.wallet),
                 ),
-                title: Text("Name"*10),
+                title: Text("Name" * 10),
                 subtitle: Text("Category"),
                 trailing: Text("120"),
               );
@@ -44,13 +50,15 @@ class HomePage extends StatelessWidget {
               },
             ),
           ),
+          SettingPage()
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          createDatabase();
           if (_controller.selectedIndex.value == 0) {
             print("Income");
-          }else{
+          } else {
             print("Expanse");
           }
         },
@@ -59,15 +67,28 @@ class HomePage extends StatelessWidget {
       bottomNavigationBar: Obx(() {
         return NavigationBar(
           selectedIndex: _controller.selectedIndex.value,
+          animationDuration: Duration(seconds: 2),
           onDestinationSelected: (value) {
             _controller.pageChange(value);
           },
           destinations: [
             NavigationDestination(icon: Icon(Icons.trending_up), label: "Income"),
-            NavigationDestination(icon: Icon(Icons.trending_down), label: "Expanse")
+            NavigationDestination(icon: Icon(Icons.trending_down), label: "Expanse"),
+            NavigationDestination(icon: Icon(Icons.settings), label: "Expanse")
           ],
         );
       }),
     );
+  }
+
+  void createDatabase() async {
+    DbHelper.instance.addRecord(BudgetModel(
+      name: "Hello ${Random().nextInt(100)}",
+      userId: 1,
+      category: 1,
+      amount: Random().nextInt(2000).toDouble(),
+      type: 0,
+      date: DateTime.now().toString()
+    ));
   }
 }

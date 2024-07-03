@@ -4,7 +4,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'db_helper.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  DbHelper helper=DbHelper.instance;
+  helper.createDatabase();
   runApp(MyApp());
 }
 
