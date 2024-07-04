@@ -53,17 +53,18 @@ class HomePage extends StatelessWidget {
           SettingPage()
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          createDatabase();
-          if (_controller.selectedIndex.value == 0) {
-            print("Income");
-          } else {
-            print("Expanse");
-          }
-        },
-        child: Icon(Icons.add_to_photos),
-      ),
+      floatingActionButton: Obx(() {
+        if (_controller.selectedIndex.value == 2) {
+          return SizedBox.shrink();
+        } else {
+          return FloatingActionButton(
+            onPressed: () {
+              showAddDialog(context);
+            },
+            child: Icon(Icons.add_to_photos),
+          );
+        }
+      }),
       bottomNavigationBar: Obx(() {
         return NavigationBar(
           selectedIndex: _controller.selectedIndex.value,
@@ -81,14 +82,54 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void createDatabase() async {
-    DbHelper.instance.addRecord(BudgetModel(
-      name: "Hello ${Random().nextInt(100)}",
-      userId: 1,
-      category: 1,
-      amount: Random().nextInt(2000).toDouble(),
-      type: 0,
-      date: DateTime.now().toString()
-    ));
+  void showAddDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Add Income"),
+          content: Container(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                    controller: _controller.budgetNameController, decoration: InputDecoration(hintText: "Name")),
+                TextFormField(
+                    controller: _controller.budgetAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(hintText: "Amount")),
+                DropdownMenu(
+                  dropdownMenuEntries: _controller.categoryList.map((element) {
+                    return DropdownMenuEntry(
+                      label: "${element["category_name"]}",
+                      value: "${element["category_name"]}",
+                    );
+                  }).toList(),
+                  onSelected: (value) {
+                    _controller.selectedCategoryName.value = value ?? "";
+                    print("value $value");
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Get.back();
+                },
+                child: Text("Cancel")),
+            ElevatedButton(
+              onPressed: () {
+                _controller.addBudget();
+                Get.back();
+              },
+              child: Text("Ok"),
+            )
+          ],
+        );
+      },
+    );
   }
 }

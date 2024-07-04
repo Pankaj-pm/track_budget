@@ -1,4 +1,5 @@
 import 'package:budget_tracker_app/db_helper.dart';
+import 'package:budget_tracker_app/generated/assets.dart';
 import 'package:budget_tracker_app/home/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -21,11 +22,13 @@ class SettingPage extends StatelessWidget {
               TextFormField(
                 controller: homeController.categoryController,
                 decoration: InputDecoration(hintText: "Name"),
-                onFieldSubmitted: (value) {
+                onFieldSubmitted: (value) async {
                   if (value.isNotEmpty) {
-                    DbHelper.instance.addCategory(value, homeController.selectedCategory.value);
+                    await DbHelper.instance.addCategory(value, homeController.selectedCategory.value);
                     homeController.categoryController.clear();
-                    Get.snackbar("Success","Category Added");
+                    // homeController.getCategoryData();
+                    // homeController.isAdded.refresh();
+                    Get.snackbar("Success", "Category Added");
                   }
                 },
               ),
@@ -50,16 +53,54 @@ class SettingPage extends StatelessWidget {
                   ],
                 );
               }),
-              Expanded(
-                child: ListView.builder(
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text("cat name"),
-                      subtitle: Text("Income"),
-                    );
+              // Expanded(
+              //   child: Obx(() {
+              //     homeController.isAdded.value;
+              //     return FutureBuilder<List<Map<String, Object?>>>(
+              //       future: DbHelper.instance.getCategory(),
+              //       builder: (context, snapshot) {
+              //         List<Map<String, Object?>> cat = snapshot.data ?? [];
+              //         return RefreshIndicator(
+              //           onRefresh: () async {},
+              //           child: ListView.builder(
+              //             itemCount: cat.length,
+              //             itemBuilder: (context, index) {
+              //               return ListTile(
+              //                 leading: Image.asset(Assets.assetsESalon),
+              //                 title: Text("cat name"),
+              //                 subtitle: Text("Income"),
+              //               );
+              //             },
+              //           ),
+              //         );
+              //       },
+              //     );
+              //   }),
+              // )
+              Expanded(child: Obx(() {
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    homeController.getCategoryData();
                   },
-                ),
-              )
+                  child: ListView.builder(
+                    itemCount: homeController.categoryList.length,
+                    itemBuilder: (context, index) {
+                      var cat = homeController.categoryList[index];
+                      var isIncome = cat["category_type"] == 0;
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isIncome ? Colors.green : Colors.red,
+                          child: Icon(
+                            isIncome ? Icons.trending_up : Icons.trending_down,
+                          ),
+                        ),
+                        title: Text("${cat["category_name"]}"),
+                        subtitle: Text(isIncome ? "Income" : "Expanse"),
+                      );
+                    },
+                  ),
+                );
+              }))
             ],
           ),
         ),

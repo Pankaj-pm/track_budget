@@ -57,7 +57,7 @@ class DbHelper {
             CREATE TABLE "track_budget" (
             "id"	INTEGER NOT NULL UNIQUE,
             "name"	TEXT,
-            "category"	INTEGER NOT NULL,
+            "category"	TEXT NOT NULL,
             "type"	INTEGER NOT NULL,
             "amount"	REAL NOT NULL,
             "date"	TEXT NOT NULL,
@@ -76,7 +76,7 @@ class DbHelper {
     );
   }
 
-  void addRecord(BudgetModel model) async {
+  Future addRecord(BudgetModel model) async {
     if (_db != null) {
       int res = await _db!.insert("track_budget", model.toJson());
     } else {
@@ -84,9 +84,9 @@ class DbHelper {
     }
   }
 
-  void addCategory(String name, int type) {
+  Future addCategory(String name, int type) async{
     if (_db != null) {
-      _db!.insert(tableCategory, {
+      await _db!.insert(tableCategory, {
         "category_name": name,
         "category_type": type,
       });
@@ -95,6 +95,27 @@ class DbHelper {
     }
   }
 
-  void getCategorty(){
+  Future<List<Map<String, Object?>>>  getCategory() async {
+    if (_db != null) {
+      List<Map<String, Object?>> category = await _db!.query(tableCategory);
+      print("category ${category}");
+      return category;
+
+    } else {
+      print("Database is null");
+    }
+    return [];
+  }
+
+  Future<List<Map<String, Object?>>>  getBudget() async {
+    if (_db != null) {
+      List<Map<String, Object?>> budgetList = await _db!.query("track_budget");
+      print("category ${budgetList}");
+      return budgetList;
+
+    } else {
+      print("Database is null");
+    }
+    return [];
   }
 }

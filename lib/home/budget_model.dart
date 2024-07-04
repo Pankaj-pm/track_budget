@@ -1,6 +1,6 @@
 class BudgetModel {
   String? name;
-  int? category;
+  String? category;
   int? type;
   double? amount;
   String? date;
