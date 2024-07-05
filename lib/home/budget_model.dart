@@ -1,6 +1,7 @@
 class BudgetModel {
   String? name;
   String? category;
+  String? categoryImg;
   int? type;
   double? amount;
   String? date;
@@ -9,6 +10,7 @@ class BudgetModel {
   BudgetModel({
     this.name,
     this.category,
+    this.categoryImg,
     this.type,
     this.amount,
     this.date,
@@ -18,6 +20,7 @@ class BudgetModel {
   factory BudgetModel.fromJson(Map<String, dynamic> json) => BudgetModel(
     name: json["name"],
     category: json["category"],
+    categoryImg: json["category_img"],
     type: json["type"],
     amount: json["amount"]?.toDouble(),
     date: json["date"],
@@ -27,6 +30,7 @@ class BudgetModel {
   Map<String, dynamic> toJson() => {
     "name": name,
     "category": category,
+    "category_img": categoryImg,
     "type": type,
     "amount": amount,
     "date": date,

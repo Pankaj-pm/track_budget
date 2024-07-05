@@ -58,6 +58,7 @@ class DbHelper {
             "id"	INTEGER NOT NULL UNIQUE,
             "name"	TEXT,
             "category"	TEXT NOT NULL,
+            "category_img"	TEXT NOT NULL,
             "type"	INTEGER NOT NULL,
             "amount"	REAL NOT NULL,
             "date"	TEXT NOT NULL,
@@ -69,6 +70,7 @@ class DbHelper {
             CREATE TABLE "$tableCategory" (
             "id"	INTEGER NOT NULL UNIQUE,
             "category_name"	TEXT NOT NULL,
+            "category_img"	TEXT NOT NULL,
             "category_type"	INTEGER NOT NULL,
             PRIMARY KEY("id" AUTOINCREMENT)
         )''');
@@ -84,38 +86,54 @@ class DbHelper {
     }
   }
 
-  Future addCategory(String name, int type) async{
+  Future updateRecord(BudgetModel model,int id)async{
+    if (_db != null) {
+      _db!.update("track_budget", model.toJson(),where: "id = ? ",whereArgs: [id]);
+    } else {
+      print("Database is null");
+    }
+  }
+
+  Future addCategory(String name, int type, String assetPath) async {
     if (_db != null) {
       await _db!.insert(tableCategory, {
         "category_name": name,
         "category_type": type,
+        "category_img": assetPath,
       });
     } else {
       print("Database is null");
     }
   }
 
-  Future<List<Map<String, Object?>>>  getCategory() async {
+  Future<List<Map<String, Object?>>> getCategory() async {
     if (_db != null) {
       List<Map<String, Object?>> category = await _db!.query(tableCategory);
       print("category ${category}");
       return category;
-
     } else {
       print("Database is null");
     }
     return [];
   }
 
-  Future<List<Map<String, Object?>>>  getBudget() async {
+  Future<List<Map<String, Object?>>> getBudget({required int type}) async {
     if (_db != null) {
-      List<Map<String, Object?>> budgetList = await _db!.query("track_budget");
-      print("category ${budgetList}");
+      // List<Map<String, Object?>> budgetList = await _db!.query("track_budget",where: "type = 0");
+      List<Map<String, Object?>> budgetList = await _db!.query("track_budget", where: "type = ?", whereArgs: [type]);
+      print("budgetList ${budgetList}");
       return budgetList;
-
     } else {
       print("Database is null");
     }
     return [];
+  }
+
+  Future deleteBudget(int id) async {
+    if (_db != null) {
+      _db!.delete("track_budget", where: "id = ?", whereArgs: [id]);
+    } else {
+      print("Database is null");
+    }
   }
 }

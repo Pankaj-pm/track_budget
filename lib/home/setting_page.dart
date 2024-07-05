@@ -19,18 +19,46 @@ class SettingPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text("Add Category", style: TextStyle(fontSize: 30)),
-              TextFormField(
-                controller: homeController.categoryController,
-                decoration: InputDecoration(hintText: "Name"),
-                onFieldSubmitted: (value) async {
-                  if (value.isNotEmpty) {
-                    await DbHelper.instance.addCategory(value, homeController.selectedCategory.value);
-                    homeController.categoryController.clear();
-                    // homeController.getCategoryData();
-                    // homeController.isAdded.refresh();
-                    Get.snackbar("Success", "Category Added");
-                  }
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: homeController.categoryController,
+                      decoration: InputDecoration(hintText: "Name"),
+                      onFieldSubmitted: (value) async {
+                        if (value.isNotEmpty) {
+                          await DbHelper.instance.addCategory(
+                            value,
+                            homeController.selectedCategory.value,
+                            homeController.selectCatImg.value,
+                          );
+                          homeController.categoryController.clear();
+                          homeController.getCategoryData();
+                          // homeController.isAdded.refresh();
+                          Get.snackbar("Success", "Category Added");
+                        }
+                      },
+                    ),
+                  ),
+                  Obx(() {
+                    return DropdownButton<String>(
+                      value: homeController.selectCatImg.value,
+                      items: homeController.catImgList
+                          .map((e) => DropdownMenuItem<String>(
+                                value: e,
+                                child: Image.asset(
+                                  e,
+                                  width: 40,
+                                  height: 40,
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        homeController.selectCatImg.value = value ?? "";
+                      },
+                    );
+                  })
+                ],
               ),
               Obx(() {
                 return Row(
@@ -90,12 +118,17 @@ class SettingPage extends StatelessWidget {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: isIncome ? Colors.green : Colors.red,
-                          child: Icon(
-                            isIncome ? Icons.trending_up : Icons.trending_down,
-                          ),
+                          backgroundImage: AssetImage("${cat["category_img"]}"),
                         ),
                         title: Text("${cat["category_name"]}"),
-                        subtitle: Text(isIncome ? "Income" : "Expanse"),
+                        subtitle: Row(
+                          children: [
+                            Icon(
+                              isIncome ? Icons.trending_up : Icons.trending_down,
+                            ),
+                            Text(isIncome ? "Income" : "Expanse"),
+                          ],
+                        ),
                       );
                     },
                   ),

@@ -16,42 +16,70 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageView(
-        controller: _controller.pageController,
-        onPageChanged: (value) {
-          _controller.pageChange(value);
-        },
-        children: [
-          ListView.builder(
-            itemCount: 20,
-            padding: EdgeInsets.only(bottom: 70),
-            itemBuilder: (context, index) {
-              return ListTile(
-                leading: CircleAvatar(
-                  child: Icon(Icons.wallet),
+      body: SafeArea(
+        child: PageView(
+          controller: _controller.pageController,
+          onPageChanged: (value) {
+            _controller.pageChange(value);
+          },
+          children: [
+            Obx(() {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  _controller.getBudgetData();
+                },
+                child: ListView.builder(
+                  itemCount: _controller.budgetIncomeList.length,
+                  padding: EdgeInsets.only(bottom: 70),
+                  itemBuilder: (context, index) {
+                    Map<String, Object?> budgetIncomeMap = _controller.budgetIncomeList[index];
+                    BudgetModel budgetIncome = BudgetModel.fromJson(_controller.budgetIncomeList[index]);
+                    int id = budgetIncomeMap["id"] as int;
+                    return ListTile(
+                      onTap: () {
+                        showAddDialog(context, budget: budgetIncome, id: id);
+                      },
+                      leading: CircleAvatar(
+                        backgroundImage: AssetImage("${budgetIncome.categoryImg}"),
+                      ),
+                      title: Text("${budgetIncome.name}"),
+                      subtitle: Text("${budgetIncome.category}"),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("${budgetIncome.amount}"),
+                          IconButton(
+                              onPressed: () {
+                                _controller.deleteBudget(id);
+                              },
+                              icon: Icon(Icons.delete))
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                title: Text("Name" * 10),
-                subtitle: Text("Category"),
-                trailing: Text("120"),
               );
-            },
-          ),
-          Container(
-            child: ListView.builder(
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Icon(Icons.wallet),
-                  ),
-                  title: Text("Name"),
-                  subtitle: Text("Category"),
-                  trailing: Text("120"),
-                );
-              },
-            ),
-          ),
-          SettingPage()
-        ],
+            }),
+            Obx(() {
+              return ListView.builder(
+                itemCount: _controller.budgetExpanseList.length,
+                itemBuilder: (context, index) {
+                  Map<String, Object?> budgetExpanse = _controller.budgetExpanseList[index];
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: AssetImage("${budgetExpanse["category_img"]}"),
+                    ),
+                    title: Text("${budgetExpanse["name"]}"),
+                    subtitle: Text("${budgetExpanse["category"]}"),
+                    trailing: Text("${budgetExpanse["amount"]}"),
+                  );
+                },
+              );
+            }),
+            SettingPage()
+          ],
+        ),
       ),
       floatingActionButton: Obx(() {
         if (_controller.selectedIndex.value == 2) {
@@ -70,24 +98,42 @@ class HomePage extends StatelessWidget {
           selectedIndex: _controller.selectedIndex.value,
           animationDuration: Duration(seconds: 2),
           onDestinationSelected: (value) {
+            print("value $value");
             _controller.pageChange(value);
           },
           destinations: [
             NavigationDestination(icon: Icon(Icons.trending_up), label: "Income"),
             NavigationDestination(icon: Icon(Icons.trending_down), label: "Expanse"),
-            NavigationDestination(icon: Icon(Icons.settings), label: "Expanse")
+            NavigationDestination(icon: Icon(Icons.settings), label: "Setting")
           ],
         );
       }),
     );
   }
 
-  void showAddDialog(BuildContext context) {
+  void showAddDialog(BuildContext context, {BudgetModel? budget, int? id}) {
+    if (budget != null) {
+      _controller.budgetNameController.text = budget.name ?? "";
+      _controller.budgetAmountController.text = "${budget.amount ?? 0.0}";
+    } else {
+      _controller.budgetNameController.clear();
+      _controller.budgetAmountController.clear();
+    }
+
+    String title="";
+    String insertOrUpdate=_controller.selectedIndex.value == 0 ? "Income" : "Expanse";
+
+    if(budget!=null){
+      title="Update $insertOrUpdate";
+    }else{
+      title="Add $insertOrUpdate";
+    }
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Add Income"),
+          title: Text(title),
           content: Container(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -100,14 +146,22 @@ class HomePage extends StatelessWidget {
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(hintText: "Amount")),
                 DropdownMenu(
+                  // initialSelection: _controller.categoryList[1],
+                  // label: Text("hello"),
+                  hintText: budget?.category,
                   dropdownMenuEntries: _controller.categoryList.map((element) {
                     return DropdownMenuEntry(
-                      label: "${element["category_name"]}",
-                      value: "${element["category_name"]}",
-                    );
+                        label: "${element["category_name"]}",
+                        value: element,
+                        leadingIcon: Image.asset(
+                          "${element["category_img"]}",
+                          height: 20,
+                          width: 20,
+                        ));
                   }).toList(),
                   onSelected: (value) {
-                    _controller.selectedCategoryName.value = value ?? "";
+                    _controller.selectedCategoryName.value = "${value?["category_name"]}";
+                    _controller.selectedCategoryPath.value = "${value?["category_img"]}";
                     print("value $value");
                   },
                 ),
@@ -121,8 +175,14 @@ class HomePage extends StatelessWidget {
                 },
                 child: Text("Cancel")),
             ElevatedButton(
-              onPressed: () {
-                _controller.addBudget();
+              onPressed: () async {
+                if(budget!=null){
+                  await _controller.updateBudget(budget,id??0);
+                }else{
+                  await _controller.addBudget();
+                }
+
+                _controller.getBudgetData();
                 Get.back();
               },
               child: Text("Ok"),
