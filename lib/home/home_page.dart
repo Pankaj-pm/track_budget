@@ -6,6 +6,7 @@ import 'package:budget_tracker_app/home/home_controller.dart';
 import 'package:budget_tracker_app/home/setting_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 
 class HomePage extends StatelessWidget {
@@ -61,20 +62,118 @@ class HomePage extends StatelessWidget {
               );
             }),
             Obx(() {
-              return ListView.builder(
-                itemCount: _controller.budgetExpanseList.length,
-                itemBuilder: (context, index) {
-                  Map<String, Object?> budgetExpanse = _controller.budgetExpanseList[index];
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(18.0),
+                    child: Center(
+                      child: SizedBox(
+                        height: 100,
+                        width: 100,
+                        child: Obx(() {
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CircularProgressIndicator(
+                                value: _controller.expanseTotal.value/100000,
+                                color: (_controller.expanseTotal.value/100000)>=1?Colors.red:Colors.blue,
 
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: AssetImage("${budgetExpanse["category_img"]}"),
+                              ),
+                              Center(child: Text("${_controller.expanseTotal.value}"))
+                            ],
+                          );
+                        }),
+                      ),
                     ),
-                    title: Text("${budgetExpanse["name"]}"),
-                    subtitle: Text("${budgetExpanse["category"]}"),
-                    trailing: Text("${budgetExpanse["amount"]}"),
-                  );
-                },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _controller.searchController,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: "Search",
+                              prefixIcon: Icon(Icons.search),
+                            ),
+                            onChanged: (value) {
+                              if (value.isEmpty) {
+                                _controller.budgetExpanseSearchList.value = _controller.budgetExpanseList;
+                                // _controller.getBudgetData();
+                              } else {
+                                _controller.searchBudgetData(value);
+                                // search record
+                              }
+                            },
+                          ),
+                        ),
+                        IconButton(
+                            onPressed: () async {
+                              DateTime? date = await showDatePicker(
+                                context: context,
+                                initialDate: DateTime.now(),
+                                firstDate: DateTime(2024),
+                                lastDate: DateTime(2050),
+                              );
+                              if (date != null) {
+                                var format = DateFormat("yyyy-MM-dd").format(date);
+                                print("format $format");
+                                _controller.searchDate.value = format;
+                                _controller.searchBudgetData(_controller.searchController.text, date: format);
+                              } else {
+                                _controller.searchDate.value = "";
+                                _controller.searchBudgetData(_controller.searchController.text);
+                              }
+
+                              print(date);
+                            },
+                            icon: Icon(Icons.calendar_month))
+                      ],
+                    ),
+                  ),
+                  Obx(() {
+                    if (_controller.searchDate.value.isEmpty) {
+                      return SizedBox.shrink();
+                    }
+                    return ActionChip(
+                      label: Text("${_controller.searchDate.value}"),
+                      onPressed: () {},
+                    );
+                  }),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: _controller.budgetExpanseSearchList.length,
+                      itemBuilder: (context, index) {
+                        Map<String, Object?> budgetExpanse = _controller.budgetExpanseSearchList[index];
+                        var budgetModel = BudgetModel.fromJson(budgetExpanse);
+                        budgetModel.date;
+
+                        // var parse = DateTime.parse(budgetModel.date ?? "");
+                        //
+                        // String date = DateFormat("EEE, MMM d").format(parse);
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundImage: AssetImage("${budgetModel.categoryImg}"),
+                          ),
+                          title: Text("${budgetModel.name}"),
+                          subtitle: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text("${budgetModel.category}"),
+                              Text(budgetModel.date ?? ""),
+                            ],
+                          ),
+                          trailing: Text("${budgetExpanse["amount"]}"),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             }),
             SettingPage()
@@ -120,13 +219,13 @@ class HomePage extends StatelessWidget {
       _controller.budgetAmountController.clear();
     }
 
-    String title="";
-    String insertOrUpdate=_controller.selectedIndex.value == 0 ? "Income" : "Expanse";
+    String title = "";
+    String insertOrUpdate = _controller.selectedIndex.value == 0 ? "Income" : "Expanse";
 
-    if(budget!=null){
-      title="Update $insertOrUpdate";
-    }else{
-      title="Add $insertOrUpdate";
+    if (budget != null) {
+      title = "Update $insertOrUpdate";
+    } else {
+      title = "Add $insertOrUpdate";
     }
 
     showDialog(
@@ -176,9 +275,9 @@ class HomePage extends StatelessWidget {
                 child: Text("Cancel")),
             ElevatedButton(
               onPressed: () async {
-                if(budget!=null){
-                  await _controller.updateBudget(budget,id??0);
-                }else{
+                if (budget != null) {
+                  await _controller.updateBudget(budget, id ?? 0);
+                } else {
                   await _controller.addBudget();
                 }
 

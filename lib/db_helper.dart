@@ -35,6 +35,8 @@ DELETE FROM `student` WHERE mark<30
 
 * */
 
+import 'dart:ffi';
+
 import 'package:budget_tracker_app/home/budget_model.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -86,9 +88,9 @@ class DbHelper {
     }
   }
 
-  Future updateRecord(BudgetModel model,int id)async{
+  Future updateRecord(BudgetModel model, int id) async {
     if (_db != null) {
-      _db!.update("track_budget", model.toJson(),where: "id = ? ",whereArgs: [id]);
+      _db!.update("track_budget", model.toJson(), where: "id = ? ", whereArgs: [id]);
     } else {
       print("Database is null");
     }
@@ -123,6 +125,42 @@ class DbHelper {
       List<Map<String, Object?>> budgetList = await _db!.query("track_budget", where: "type = ?", whereArgs: [type]);
       print("budgetList ${budgetList}");
       return budgetList;
+    } else {
+      print("Database is null");
+    }
+    return [];
+  }
+
+  Future<double> getExpanseCount() async {
+    if (_db != null) {
+      List<Map<String, Object?>> rawQuery = await _db!.rawQuery("SELECT sum(amount) as sum from track_budget WHERE type = 1");
+      print(rawQuery);
+
+      return double.tryParse("${rawQuery[0]["sum"]}")??0.0;
+    } else {
+      print("Database is null");
+      return 0.0;
+    }
+  }
+
+  Future<List<Map<String, Object?>>> searchExpanseBudget({required String data, String? date}) async {
+    if (_db != null) {
+      //SELECT * from track_budget WHERE type = 1 and name  like  '%%'
+      print('searchExpanseBudget date $date');
+
+      if (date != null) {
+        List<Map<String, Object?>> budgetList =
+            await _db!.query("track_budget", where: "type = 1 and name like '%$data%' and date='$date'");
+        // List<Map<String, Object?>> budgetList =
+        //     await _db!.rawQuery("SELECT * from track_budget WHERE type = 1 and date = '2024-07-07'");
+        print("budgetList ${budgetList}");
+        return budgetList;
+      } else {
+        List<Map<String, Object?>> budgetList =
+            await _db!.query("track_budget", where: "type = 1 and name like '%$data%'");
+        print("budgetList ${budgetList}");
+        return budgetList;
+      }
     } else {
       print("Database is null");
     }

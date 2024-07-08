@@ -3,6 +3,7 @@ import 'package:budget_tracker_app/generated/assets.dart';
 import 'package:budget_tracker_app/home/budget_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class HomeController extends GetxController {
   RxInt selectedIndex = 0.obs;
@@ -10,10 +11,14 @@ class HomeController extends GetxController {
   RxInt selectedCategory = 0.obs;
   RxString selectedCategoryName = "".obs;
   RxString selectedCategoryPath = "".obs;
+  RxString searchDate = "".obs;
+  RxDouble expanseTotal = 0.0.obs;
 
   RxList<Map<String, Object?>> categoryList = <Map<String, Object?>>[].obs;
   RxList<Map<String, Object?>> budgetIncomeList = <Map<String, Object?>>[].obs;
+
   RxList<Map<String, Object?>> budgetExpanseList = <Map<String, Object?>>[].obs;
+  RxList<Map<String, Object?>> budgetExpanseSearchList = <Map<String, Object?>>[].obs;
 
   TextEditingController budgetNameController = TextEditingController();
   TextEditingController budgetAmountController = TextEditingController();
@@ -39,6 +44,8 @@ class HomeController extends GetxController {
 
   RxBool isAdded = false.obs;
 
+  TextEditingController searchController = TextEditingController();
+
   @override
   void onInit() {
     getCategoryData();
@@ -62,6 +69,9 @@ class HomeController extends GetxController {
   void getBudgetData() async {
     budgetIncomeList.value = await DbHelper.instance.getBudget(type: 0);
     budgetExpanseList.value = await DbHelper.instance.getBudget(type: 1);
+
+    budgetExpanseSearchList.value = budgetExpanseList;
+    expanseTotal.value=await DbHelper.instance.getExpanseCount();
   }
 
   Future deleteBudget(int id) async {
@@ -70,6 +80,7 @@ class HomeController extends GetxController {
   }
 
   Future addBudget() async {
+    String date = DateFormat("yyyy.MM.dd").format(DateTime.now());
     await DbHelper.instance.addRecord(BudgetModel(
       name: budgetNameController.text,
       amount: double.tryParse(budgetAmountController.text) ?? 0.0,
@@ -77,21 +88,30 @@ class HomeController extends GetxController {
       category: selectedCategoryName.value,
       categoryImg: selectedCategoryPath.value,
       userId: 1,
-      date: DateTime.now().toString(),
+      date: date,
     ));
     budgetNameController.clear();
     budgetAmountController.clear();
   }
 
-  Future updateBudget(BudgetModel model,int id) async {
-    await DbHelper.instance.updateRecord(BudgetModel(
-      name: budgetNameController.text,
-      amount: double.tryParse(budgetAmountController.text) ?? 0.0,
-      type: selectedIndex.value,
-      category: selectedCategoryName.value,
-      categoryImg: selectedCategoryPath.value,
-      userId: 1,
-      date: DateTime.now().toString(),
-    ), id);
+  Future updateBudget(BudgetModel model, int id) async {
+    String date = DateFormat("yyyy.MM.dd").format(DateTime.now());
+    await DbHelper.instance.updateRecord(
+        BudgetModel(
+          name: budgetNameController.text,
+          amount: double.tryParse(budgetAmountController.text) ?? 0.0,
+          type: selectedIndex.value,
+          category: selectedCategoryName.value,
+          categoryImg: selectedCategoryPath.value,
+          userId: 1,
+          date: date,
+        ),
+        id);
+  }
+
+  void searchBudgetData(String search, {String? date}) async {
+    List<Map<String, Object?>> budgetExpanseList =
+        await DbHelper.instance.searchExpanseBudget(data: search, date: date);
+    budgetExpanseSearchList.value = budgetExpanseList;
   }
 }
